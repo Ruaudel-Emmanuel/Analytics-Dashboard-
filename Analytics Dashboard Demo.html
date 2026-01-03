@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard - Portfolio Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #1e40af;
+            --secondary-color: #7c3aed;
+            --success-color: #059669;
+            --warning-color: #d97706;
+            --danger-color: #dc2626;
+            --light-bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-dark: #1e293b;
+            --text-light: #64748b;
+            --border-color: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-bg);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .controls {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 0.9rem;
+        }
+
+        .form-group select,
+        .form-group input {
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #1e3a8a;
+        }
+
+        .btn-secondary {
+            background: var(--text-light);
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .card.success { border-left-color: var(--success-color); }
+        .card.warning { border-left-color: var(--warning-color); }
+        .card.danger { border-left-color: var(--danger-color); }
+
+        .metric-label {
+            color: var(--text-light);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-change {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .metric-change.positive {
+            color: var(--success-color);
+        }
+
+        .metric-change.negative {
+            color: var(--danger-color);
+        }
+
+        .chart-container {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-dark);
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .table-container {
+            background: var(--card-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: var(--light-bg);
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        tbody tr:hover {
+            background: var(--light-bg);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-success {
+            background: rgba(5, 150, 105, 0.1);
+            color: var(--success-color);
+        }
+
+        .status-warning {
+            background: rgba(217, 119, 6, 0.1);
+            color: var(--warning-color);
+        }
+
+        .status-danger {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--danger-color);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            .chart-wrapper {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 Analytics Dashboard</h1>
+        <p>Démonstration portfolio - Performance multi-canaux et KPI métier</p>
+    </div>
+
+    <div class="container">
+        <!-- Filtres -->
+        <div class="controls">
+            <div class="form-group">
+                <label for="locationFilter">Localisation</label>
+                <select id="locationFilter">
+                    <option value="">Toutes les villes</option>
+                    <option value="Paris">Paris</option>
+                    <option value="Lyon">Lyon</option>
+                    <option value="Marseille">Marseille</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="periodFilter">Période</label>
+                <select id="periodFilter">
+                    <option value="">Toutes les périodes</option>
+                    <option value="Janvier 2025">Janvier 2025</option>
+                    <option value="Février 2025">Février 2025</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="channelFilter">Canal</label>
+                <select id="channelFilter">
+                    <option value="">Tous les canaux</option>
+                    <option value="Organic">Organic</option>
+                    <option value="Paid Ads">Paid Ads</option>
+                    <option value="Direct">Direct</option>
+                </select>
+            </div>
+            <button class="btn" onclick="resetFilters()">Réinitialiser</button>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="grid">
+            <div class="card success">
+                <div class="metric-label">Revenu Total</div>
+                <div class="metric-value" id="totalRevenue">€0</div>
+                <div class="metric-change positive" id="revenueChange">↑ +8.2%</div>
+            </div>
+            <div class="card">
+                <div class="metric-label">Trafic Total</div>
+                <div class="metric-value" id="totalTraffic">0</div>
+                <div class="metric-change positive" id="trafficChange">↑ +12.5%</div>
+            </div>
+            <div class="card warning">
+                <div class="metric-label">Taux Conversion</div>
+                <div class="metric-value" id="conversionRate">0%</div>
+                <div class="metric-change positive" id="conversionChange">↑ +0.5%</div>
+            </div>
+            <div class="card">
+                <div class="metric-label">Réservations</div>
+                <div class="metric-value" id="totalBookings">0</div>
+                <div class="metric-change positive" id="bookingsChange">↑ +6.3%</div>
+            </div>
+        </div>
+
+        <!-- Charts Row 1 -->
+        <div class="two-column">
+            <div class="chart-container">
+                <div class="chart-title">Revenu par Canal</div>
+                <div class="chart-wrapper">
+                    <canvas id="revenueByChannelChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">Performance vs Objectif</div>
+                <div class="chart-wrapper">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row 2 -->
+        <div class="chart-container">
+            <div class="chart-title">Évolution Revenu par Localisation</div>
+            <div class="chart-wrapper" style="height: 350px;">
+                <canvas id="revenueByLocationChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-container">
+            <div style="padding: 1.5rem 1.5rem 0;">
+                <div class="chart-title">Détail Données Brutes</div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Période</th>
+                        <th>Localisation</th>
+                        <th>Canal</th>
+                        <th>Revenu</th>
+                        <th>Objectif</th>
+                        <th>Trafic</th>
+                        <th>Réservations</th>
+                        <th>Performance</th>
+                    </tr>
+                </thead>
+                <tbody id="dataTable">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Dashboard Portfolio Demo © 2025 - Données d'exemple pour démonstration | <strong>Contact Upwork</strong></p>
+    </div>
+
+    <script>
+        // Sample data
+        const sampleData = [
+            { date: '2025-01-01', period: 'Janvier 2025', location: 'Paris', revenue: 45000, target_revenue: 50000, traffic: 12500, engagement_rate: 4.2, conversion_rate: 2.8, bookings: 125, reservation_value: 360, channel: 'Organic', performance_vs_target: 90 },
+            { date: '2025-01-01', period: 'Janvier 2025', location: 'Paris', revenue: 28000, target_revenue: 30000, traffic: 8200, engagement_rate: 3.1, conversion_rate: 2.1, bookings: 65, reservation_value: 430, channel: 'Paid Ads', performance_vs_target: 93 },
+            { date: '2025-01-01', period: 'Janvier 2025', location: 'Paris', revenue: 15000, target_revenue: 15000, traffic: 3500, engagement_rate: 5.5, conversion_rate: 3.4, bookings: 52, reservation_value: 288, channel: 'Direct', performance_vs_target: 100 },
+            { date: '2025-01-01', period: 'Janvier 2025', location: 'Lyon', revenue: 38000, target_revenue: 42000, traffic: 10200, engagement_rate: 3.8, conversion_rate: 2.5, bookings: 95, reservation_value: 400, channel: 'Organic', performance_vs_target: 90 },
+            { date: '2025-01-01', period: 'Janvier 2025', location: 'Lyon', revenue: 22000, target_revenue: 25000, traffic: 7100, engagement_rate: 2.9, conversion_rate: 1.9, bookings: 48, reservation_value: 458, channel: 'Paid Ads', performance_vs_target: 88 },
+            { date: '2025-01-01', period: 'Janvier 2025', location: 'Lyon', revenue: 12000, target_revenue: 13000, traffic: 2800, engagement_rate: 4.8, conversion_rate: 2.8, bookings: 42, reservation_value: 285, channel: 'Direct', performance_vs_target: 92 },
+            { date: '2025-01-01', period: 'Janvier 2025', location: 'Marseille', revenue: 32000, target_revenue: 40000, traffic: 9800, engagement_rate: 3.5, conversion_rate: 2.2, bookings: 72, reservation_value: 444, channel: 'Organic', performance_vs_target: 80 },
+            { date: '2025-01-01', period: 'Janvier 2025', location: 'Marseille', revenue: 18000, target_revenue: 22000, traffic: 5500, engagement_rate: 2.7, conversion_rate: 1.6, bookings: 38, reservation_value: 473, channel: 'Paid Ads', performance_vs_target: 81 },
+            { date: '2025-01-01', period: 'Janvier 2025', location: 'Marseille', revenue: 9000, target_revenue: 10000, traffic: 2100, engagement_rate: 4.2, conversion_rate: 2.5, bookings: 28, reservation_value: 321, channel: 'Direct', performance_vs_target: 90 },
+            { date: '2025-02-01', period: 'Février 2025', location: 'Paris', revenue: 48000, target_revenue: 52000, traffic: 13500, engagement_rate: 4.5, conversion_rate: 3.0, bookings: 135, reservation_value: 355, channel: 'Organic', performance_vs_target: 92 },
+            { date: '2025-02-01', period: 'Février 2025', location: 'Paris', revenue: 31000, target_revenue: 32000, traffic: 9200, engagement_rate: 3.4, conversion_rate: 2.3, bookings: 72, reservation_value: 430, channel: 'Paid Ads', performance_vs_target: 96 },
+            { date: '2025-02-01', period: 'Février 2025', location: 'Paris', revenue: 17000, target_revenue: 16000, traffic: 4000, engagement_rate: 6.0, conversion_rate: 3.7, bookings: 56, reservation_value: 303, channel: 'Direct', performance_vs_target: 106 },
+            { date: '2025-02-01', period: 'Février 2025', location: 'Lyon', revenue: 41000, target_revenue: 44000, traffic: 11200, engagement_rate: 4.1, conversion_rate: 2.7, bookings: 102, reservation_value: 401, channel: 'Organic', performance_vs_target: 93 },
+            { date: '2025-02-01', period: 'Février 2025', location: 'Lyon', revenue: 24500, target_revenue: 26000, traffic: 8000, engagement_rate: 3.2, conversion_rate: 2.1, bookings: 52, reservation_value: 470, channel: 'Paid Ads', performance_vs_target: 94 },
+            { date: '2025-02-01', period: 'Février 2025', location: 'Lyon', revenue: 14000, target_revenue: 14000, traffic: 3200, engagement_rate: 5.2, conversion_rate: 3.0, bookings: 45, reservation_value: 311, channel: 'Direct', performance_vs_target: 100 },
+            { date: '2025-02-01', period: 'Février 2025', location: 'Marseille', revenue: 36000, target_revenue: 42000, traffic: 11000, engagement_rate: 3.8, conversion_rate: 2.4, bookings: 78, reservation_value: 461, channel: 'Organic', performance_vs_target: 85 },
+            { date: '2025-02-01', period: 'Février 2025', location: 'Marseille', revenue: 20500, target_revenue: 23000, traffic: 6300, engagement_rate: 3.0, conversion_rate: 1.8, bookings: 42, reservation_value: 488, channel: 'Paid Ads', performance_vs_target: 89 },
+            { date: '2025-02-01', period: 'Février 2025', location: 'Marseille', revenue: 11000, target_revenue: 11000, traffic: 2500, engagement_rate: 4.5, conversion_rate: 2.7, bookings: 32, reservation_value: 343, channel: 'Direct', performance_vs_target: 100 }
+        ];
+
+        let charts = {};
+        let filteredData = [...sampleData];
+
+        // Filter data
+        function filterData() {
+            const location = document.getElementById('locationFilter').value;
+            const period = document.getElementById('periodFilter').value;
+            const channel = document.getElementById('channelFilter').value;
+
+            filteredData = sampleData.filter(row => {
+                return (location === '' || row.location === location) &&
+                       (period === '' || row.period === period) &&
+                       (channel === '' || row.channel === channel);
+            });
+
+            updateDashboard();
+        }
+
+        function resetFilters() {
+            document.getElementById('locationFilter').value = '';
+            document.getElementById('periodFilter').value = '';
+            document.getElementById('channelFilter').value = '';
+            filteredData = [...sampleData];
+            updateDashboard();
+        }
+
+        // Update dashboard
+        function updateDashboard() {
+            updateKPIs();
+            updateCharts();
+            updateTable();
+        }
+
+        function updateKPIs() {
+            const totalRevenue = filteredData.reduce((sum, row) => sum + row.revenue, 0);
+            const totalTraffic = filteredData.reduce((sum, row) => sum + row.traffic, 0);
+            const totalBookings = filteredData.reduce((sum, row) => sum + row.bookings, 0);
+            const avgConversion = (filteredData.reduce((sum, row) => sum + row.conversion_rate, 0) / filteredData.length).toFixed(2);
+
+            document.getElementById('totalRevenue').textContent = '€' + totalRevenue.toLocaleString('fr-FR');
+            document.getElementById('totalTraffic').textContent = totalTraffic.toLocaleString('fr-FR');
+            document.getElementById('totalBookings').textContent = totalBookings.toLocaleString('fr-FR');
+            document.getElementById('conversionRate').textContent = avgConversion + '%';
+        }
+
+        function updateCharts() {
+            // Revenue by Channel
+            const revenueByChannel = {};
+            filteredData.forEach(row => {
+                revenueByChannel[row.channel] = (revenueByChannel[row.channel] || 0) + row.revenue;
+            });
+
+            if (charts.revenueByChannel) {
+                charts.revenueByChannel.data.labels = Object.keys(revenueByChannel);
+                charts.revenueByChannel.data.datasets[0].data = Object.values(revenueByChannel);
+                charts.revenueByChannel.update();
+            } else {
+                const ctx1 = document.getElementById('revenueByChannelChart').getContext('2d');
+                charts.revenueByChannel = new Chart(ctx1, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(revenueByChannel),
+                        datasets: [{
+                            data: Object.values(revenueByChannel),
+                            backgroundColor: ['#1e40af', '#7c3aed', '#059669'],
+                            borderColor: '#ffffff',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        }
+                    }
+                });
+            }
+
+            // Performance vs Target
+            const performanceData = filteredData.reduce((acc, row) => {
+                acc[row.location] = acc[row.location] || [];
+                acc[row.location].push(row.performance_vs_target);
+                return acc;
+            }, {});
+
+            const avgPerformance = {};
+            Object.keys(performanceData).forEach(location => {
+                avgPerformance[location] = (performanceData[location].reduce((a, b) => a + b, 0) / performanceData[location].length).toFixed(1);
+            });
+
+            if (charts.performance) {
+                charts.performance.data.labels = Object.keys(avgPerformance);
+                charts.performance.data.datasets[0].data = Object.values(avgPerformance);
+                charts.performance.update();
+            } else {
+                const ctx2 = document.getElementById('performanceChart').getContext('2d');
+                charts.performance = new Chart(ctx2, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(avgPerformance),
+                        datasets: [{
+                            label: 'Performance (%)',
+                            data: Object.values(avgPerformance),
+                            backgroundColor: '#1e40af',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        plugins: { legend: { display: false } },
+                        scales: { x: { beginAtZero: true, max: 110 } }
+                    }
+                });
+            }
+
+            // Revenue by Location
+            const revenueByLocation = {};
+            filteredData.forEach(row => {
+                revenueByLocation[row.location] = (revenueByLocation[row.location] || 0) + row.revenue;
+            });
+
+            if (charts.revenueByLocation) {
+                charts.revenueByLocation.data.labels = Object.keys(revenueByLocation);
+                charts.revenueByLocation.data.datasets[0].data = Object.values(revenueByLocation);
+                charts.revenueByLocation.update();
+            } else {
+                const ctx3 = document.getElementById('revenueByLocationChart').getContext('2d');
+                charts.revenueByLocation = new Chart(ctx3, {
+                    type: 'line',
+                    data: {
+                        labels: Object.keys(revenueByLocation),
+                        datasets: [{
+                            label: 'Revenu (€)',
+                            data: Object.values(revenueByLocation),
+                            borderColor: '#1e40af',
+                            backgroundColor: 'rgba(30, 64, 175, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 6,
+                            pointBackgroundColor: '#1e40af',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: true } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+            }
+        }
+
+        function updateTable() {
+            const tbody = document.getElementById('dataTable');
+            tbody.innerHTML = '';
+
+            filteredData.forEach(row => {
+                const tr = document.createElement('tr');
+                const performanceClass = row.performance_vs_target >= 100 ? 'status-success' : row.performance_vs_target >= 90 ? 'status-warning' : 'status-danger';
+                tr.innerHTML = `
+                    <td>${row.period}</td>
+                    <td>${row.location}</td>
+                    <td>${row.channel}</td>
+                    <td>€${row.revenue.toLocaleString('fr-FR')}</td>
+                    <td>€${row.target_revenue.toLocaleString('fr-FR')}</td>
+                    <td>${row.traffic.toLocaleString('fr-FR')}</td>
+                    <td>${row.bookings}</td>
+                    <td><span class="status-badge ${performanceClass}">${row.performance_vs_target}%</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Event listeners
+        document.getElementById('locationFilter').addEventListener('change', filterData);
+        document.getElementById('periodFilter').addEventListener('change', filterData);
+        document.getElementById('channelFilter').addEventListener('change', filterData);
+
+        // Initialize
+        updateDashboard();
+    </script>
+</body>
+</html>
